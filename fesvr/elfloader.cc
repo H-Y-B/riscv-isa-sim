@@ -40,26 +40,37 @@ std::map<std::string, uint64_t> load_elf(const char* fn, memif_t* memif, reg_t* 
   std::map<std::string, uint64_t> symbols;
 
   #define LOAD_ELF(ehdr_t, phdr_t, shdr_t, sym_t, bswap) do { \
-    ehdr_t* eh = (ehdr_t*)buf; \
-    phdr_t* ph = (phdr_t*)(buf + bswap(eh->e_phoff)); \
-    *entry = bswap(eh->e_entry); \
+
+    ehdr_t* eh = (ehdr_t*)buf; \                        //提取文件头
+    phdr_t* ph = (phdr_t*)(buf + bswap(eh->e_phoff)); \ //提取程序头
+    *entry = bswap(eh->e_entry); \                      //执行入口
+
     assert(size >= bswap(eh->e_phoff) + bswap(eh->e_phnum)*sizeof(*ph)); \
+
+    //遍历程序头表ph[]
     for (unsigned i = 0; i < bswap(eh->e_phnum); i++) {			\
-      if(bswap(ph[i].p_type) == PT_LOAD && bswap(ph[i].p_memsz)) {	\
+      if(bswap(ph[i].p_type) == PT_LOAD && bswap(ph[i].p_memsz)) {	\ //LOAD属性
         if (bswap(ph[i].p_filesz)) {					\
           assert(size >= bswap(ph[i].p_offset) + bswap(ph[i].p_filesz)); \
           memif->write(bswap(ph[i].p_paddr), bswap(ph[i].p_filesz), (uint8_t*)buf + bswap(ph[i].p_offset)); \
-        } \
-        zeros.resize(bswap(ph[i].p_memsz) - bswap(ph[i].p_filesz)); \
-        memif->write(bswap(ph[i].p_paddr) + bswap(ph[i].p_filesz), bswap(ph[i].p_memsz) - bswap(ph[i].p_filesz), &zeros[0]); \
+          //                目的地址                     写大小                     源地址
+        } \ 
+
+        //借助零数组，将剩余空间置零
+        zeros.resize(bswap(ph[i].p_memsz) - bswap(ph[i].p_filesz)); \ //构建一个零数组，大小正好为剩余空间 大小
+        memif->write(bswap(ph[i].p_paddr) + bswap(ph[i].p_filesz), bswap(ph[i].p_memsz) - bswap(ph[i].p_filesz), &zeros[0]); \//剩余区域置为0
+       
       } \
     } \
-    shdr_t* sh = (shdr_t*)(buf + bswap(eh->e_shoff)); \
+
+    shdr_t* sh = (shdr_t*)(buf + bswap(eh->e_shoff)); \ //提取节头
     assert(size >= bswap(eh->e_shoff) + bswap(eh->e_shnum)*sizeof(*sh)); \
     assert(bswap(eh->e_shstrndx) < bswap(eh->e_shnum)); \
     assert(size >= bswap(sh[bswap(eh->e_shstrndx)].sh_offset) + bswap(sh[bswap(eh->e_shstrndx)].sh_size)); \
-    char *shstrtab = buf + bswap(sh[bswap(eh->e_shstrndx)].sh_offset);	\
+    char *shstrtab = buf + bswap(sh[bswap(eh->e_shstrndx)].sh_offset);	\ //提取 字符节
     unsigned strtabidx = 0, symtabidx = 0; \
+
+    //遍历节头表
     for (unsigned i = 0; i < bswap(eh->e_shnum); i++) {		     \
       unsigned max_len = bswap(sh[bswap(eh->e_shstrndx)].sh_size) - bswap(sh[i].sh_name); \
       assert(bswap(sh[i].sh_name) < bswap(sh[bswap(eh->e_shstrndx)].sh_size));	\
@@ -71,14 +82,16 @@ std::map<std::string, uint64_t> load_elf(const char* fn, memif_t* memif, reg_t* 
       if (strcmp(shstrtab + bswap(sh[i].sh_name), ".symtab") == 0) \
         symtabidx = i; \
     } \
+
     if (strtabidx && symtabidx) { \
-      char* strtab = buf + bswap(sh[strtabidx].sh_offset); \
-      sym_t* sym = (sym_t*)(buf + bswap(sh[symtabidx].sh_offset)); \
+      char* strtab = buf + bswap(sh[strtabidx].sh_offset); \ 
+
+      sym_t* sym = (sym_t*)(buf + bswap(sh[symtabidx].sh_offset)); \ //提取符号表项
       for (unsigned i = 0; i < bswap(sh[symtabidx].sh_size)/sizeof(sym_t); i++) { \
         unsigned max_len = bswap(sh[strtabidx].sh_size) - bswap(sym[i].st_name); \
         assert(bswap(sym[i].st_name) < bswap(sh[strtabidx].sh_size));	\
         assert(strnlen(strtab + bswap(sym[i].st_name), max_len) < max_len); \
-        symbols[strtab + bswap(sym[i].st_name)] = bswap(sym[i].st_value); \
+        symbols[strtab + bswap(sym[i].st_name)] = bswap(sym[i].st_value); \  //符号表
       } \
     } \
   } while(0)
