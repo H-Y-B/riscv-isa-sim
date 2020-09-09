@@ -14,12 +14,16 @@ class trap_t
   trap_t(reg_t which) : which(which) {}
   virtual const char* name();
   virtual bool has_gva() { return false; }
+
   virtual bool has_tval() { return false; }
   virtual reg_t get_tval() { return 0; }
+  
   virtual bool has_tval2() { return false; }
   virtual reg_t get_tval2() { return 0; }
+  
   virtual bool has_tinst() { return false; }
   virtual reg_t get_tinst() { return 0; }
+  
   reg_t cause() { return which; }
  private:
   char _name[16];
@@ -54,6 +58,9 @@ class mem_trap_t : public trap_t
   reg_t tval, tval2, tinst;
 };
 
+
+
+//三种 trap
 #define DECLARE_TRAP(n, x) class trap_##x : public trap_t { \
  public: \
   trap_##x() : trap_t(n) {} \
@@ -72,8 +79,13 @@ class mem_trap_t : public trap_t
   const char* name() { return "trap_"#x; } \
 };
 
+
+
+
+
+
 DECLARE_MEM_TRAP(CAUSE_MISALIGNED_FETCH, instruction_address_misaligned)
-DECLARE_MEM_TRAP(CAUSE_FETCH_ACCESS, instruction_access_fault)
+DECLARE_MEM_TRAP(CAUSE_FETCH_ACCESS,    instruction_access_fault)
 DECLARE_INST_TRAP(CAUSE_ILLEGAL_INSTRUCTION, illegal_instruction)
 DECLARE_INST_TRAP(CAUSE_BREAKPOINT, breakpoint)
 DECLARE_MEM_TRAP(CAUSE_MISALIGNED_LOAD, load_address_misaligned)
@@ -92,4 +104,25 @@ DECLARE_MEM_TRAP(CAUSE_LOAD_GUEST_PAGE_FAULT, load_guest_page_fault)
 DECLARE_INST_TRAP(CAUSE_VIRTUAL_INSTRUCTION, virtual_instruction)
 DECLARE_MEM_TRAP(CAUSE_STORE_GUEST_PAGE_FAULT, store_guest_page_fault)
 
+/*                    异常ID
+DECLARE_MEM_TRAP  (CAUSE_MISALIGNED_FETCH,          instruction_address_misaligned)
+DECLARE_MEM_TRAP  (CAUSE_FETCH_ACCESS,              instruction_access_fault)
+DECLARE_INST_TRAP (CAUSE_ILLEGAL_INSTRUCTION,       illegal_instruction)
+DECLARE_INST_TRAP (CAUSE_BREAKPOINT,                breakpoint)
+DECLARE_MEM_TRAP  (CAUSE_MISALIGNED_LOAD,           load_address_misaligned)
+DECLARE_MEM_TRAP  (CAUSE_MISALIGNED_STORE,          store_address_misaligned)
+DECLARE_MEM_TRAP  (CAUSE_LOAD_ACCESS,               load_access_fault)
+DECLARE_MEM_TRAP  (CAUSE_STORE_ACCESS,              store_access_fault)
+DECLARE_TRAP      (CAUSE_USER_ECALL,                user_ecall)
+DECLARE_TRAP      (CAUSE_SUPERVISOR_ECALL,          supervisor_ecall)
+DECLARE_TRAP      (CAUSE_HYPERVISOR_ECALL,          hypervisor_ecall)
+DECLARE_TRAP      (CAUSE_MACHINE_ECALL,             machine_ecall)
+DECLARE_MEM_TRAP  (CAUSE_FETCH_PAGE_FAULT,          instruction_page_fault)
+DECLARE_MEM_TRAP  (CAUSE_LOAD_PAGE_FAULT,           load_page_fault)
+DECLARE_MEM_TRAP  (CAUSE_STORE_PAGE_FAULT,          store_page_fault)
+DECLARE_MEM_TRAP  (CAUSE_FETCH_GUEST_PAGE_FAULT,    instruction_guest_page_fault)
+DECLARE_MEM_TRAP  (CAUSE_LOAD_GUEST_PAGE_FAULT,     load_guest_page_fault)
+DECLARE_INST_TRAP (CAUSE_VIRTUAL_INSTRUCTION,       virtual_instruction)
+DECLARE_MEM_TRAP  (CAUSE_STORE_GUEST_PAGE_FAULT,    store_guest_page_fault)
+*/
 #endif
