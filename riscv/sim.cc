@@ -26,6 +26,8 @@ static void handle_signal(int sig)
   signal(sig, &handle_signal);
 }
 
+
+//构造方法
 sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              size_t nprocs, bool halted, bool real_time_clint,
              reg_t initrd_start, reg_t initrd_end, const char* bootargs,
