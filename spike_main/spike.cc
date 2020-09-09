@@ -181,6 +181,9 @@ static std::vector<std::pair<reg_t, mem_t*>> make_mems(const char* arg)
   return res;
 }
 
+
+
+//main函数
 int main(int argc, char** argv)
 {
   bool debug = false;
@@ -345,6 +348,7 @@ int main(int argc, char** argv)
   if (!*argv1)
     help();
 
+  //指定kernel
   if (kernel && check_file_exists(kernel)) {
     kernel_size = get_file_size(kernel);
     if (isa[2] == '6' && isa[3] == '4')
@@ -359,6 +363,7 @@ int main(int argc, char** argv)
     }
   }
 
+  //指定initrd
   if (initrd && check_file_exists(initrd)) {
     initrd_size = get_file_size(initrd);
     for (auto& m : mems) {
@@ -371,9 +376,26 @@ int main(int argc, char** argv)
     }
   }
 
-  sim_t s(isa, priv, varch, nprocs, halted, real_time_clint,
-      initrd_start, initrd_end, bootargs, start_pc, mems, plugin_devices, htif_args,
-      std::move(hartids), dm_config, log_path, dtb_enabled, dtb_file);
+  //声明对象，执行构造方法
+  sim_t s(isa, 
+          priv, 
+          varch, 
+          nprocs, 
+          halted, 
+          real_time_clint,
+          initrd_start, 
+          initrd_end, 
+          bootargs, 
+          start_pc, 
+          mems, 
+          plugin_devices, 
+          htif_args,
+          std::move(hartids), 
+          dm_config, 
+          log_path, 
+          dtb_enabled, 
+          dtb_file);
+      
   std::unique_ptr<remote_bitbang_t> remote_bitbang((remote_bitbang_t *) NULL);
   std::unique_ptr<jtag_dtm_t> jtag_dtm(
       new jtag_dtm_t(&s.debug_module, dmi_rti));
@@ -382,7 +404,7 @@ int main(int argc, char** argv)
     s.set_remote_bitbang(&(*remote_bitbang));
   }
 
-  if (dump_dts) {
+  if (dump_dts) {//打印 dts
     printf("%s", s.get_dts());
     return 0;
   }
