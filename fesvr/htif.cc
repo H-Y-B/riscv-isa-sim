@@ -116,7 +116,7 @@ std::map<std::string, uint64_t> htif_t::load_payload(const std::string& payload,
     htif_t* htif;
   } preload_aware_memif(this);
 
-  return load_elf(path.c_str(), &preload_aware_memif, entry);
+  return load_elf(path.c_str(), &preload_aware_memif, entry);//执行elf加载
 }
 
 void htif_t::load_program()
