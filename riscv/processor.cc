@@ -212,7 +212,7 @@ void processor_t::parse_isa_string(const char* str)
   max_xlen = 64;
   max_isa = reg_t(2) << 62;
 
-  if (strncmp(p, "rv32", 4) == 0)
+  if (strncmp(p, "rv32", 4) == 0)//相同，返回0
     max_xlen = 32, max_isa = reg_t(1) << 30, p += 4;
   else if (strncmp(p, "rv64", 4) == 0)
     p += 4;
@@ -689,7 +689,7 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
   reg_t bit = t.cause();
   bool curr_virt = state.v;
   bool interrupt = (bit & ((reg_t)1 << (max_xlen-1))) != 0;
-  if (interrupt) {
+  if (interrupt) {//中断处理
     vsdeleg = (curr_virt && state.prv <= PRV_S) ? (state.mideleg & state.hideleg) : 0;
     hsdeleg = (state.prv <= PRV_S) ? state.mideleg : 0;
     bit &= ~((reg_t)1 << (max_xlen-1));
@@ -697,6 +697,8 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
     vsdeleg = (curr_virt && state.prv <= PRV_S) ? (state.medeleg & state.hedeleg) : 0;
     hsdeleg = (state.prv <= PRV_S) ? state.medeleg : 0;
   }
+
+  //三种模式下处理 trap
   if (state.prv <= PRV_S && bit < max_xlen && ((vsdeleg >> bit) & 1)) {
     // Handle the trap in VS-mode
     reg_t vector = (state.vstvec & 1) && interrupt ? 4*bit : 0;
@@ -1640,7 +1642,7 @@ reg_t processor_t::get_csr(int which)
       if (!supports_extension('V'))
         break;
       return VU.vlenb;
-  }
+  }//end switch
   throw trap_illegal_instruction(0);
 }
 
@@ -1655,10 +1657,11 @@ insn_func_t processor_t::decode_insn(insn_t insn)
   size_t idx = insn.bits() % OPCODE_CACHE_SIZE;
   insn_desc_t desc = opcode_cache[idx];
 
+  //从  译码信号缓存  取出的指令 不对
   if (unlikely(insn.bits() != desc.match)) {
     // fall back to linear search
-    insn_desc_t* p = &instructions[0];
-    while ((insn.bits() & p->mask) != p->match)
+    insn_desc_t* p = &instructions[0]; 
+    while ((insn.bits() & p->mask) != p->match)//遍历全部的译码信息
       p++;
     desc = *p;
 
@@ -1667,7 +1670,7 @@ insn_func_t processor_t::decode_insn(insn_t insn)
         // move to front of opcode list to reduce miss penalty
         while (--p >= &instructions[0])
           *(p+1) = *p;
-        instructions[0] = desc;
+        instructions[0] = desc;//替换回去
       }
     }
 
@@ -1675,12 +1678,12 @@ insn_func_t processor_t::decode_insn(insn_t insn)
     opcode_cache[idx].match = insn.bits();
   }
 
-  return xlen == 64 ? desc.rv64 : desc.rv32;
+  return xlen == 64 ? desc.rv64 : desc.rv32;//返回执行指令的函数
 }
 
 void processor_t::register_insn(insn_desc_t desc)
 {
-  instructions.push_back(desc);
+  instructions.push_back(desc);//装到vector instructions里面
 }
 
 void processor_t::build_opcode_map()
@@ -1694,6 +1697,7 @@ void processor_t::build_opcode_map()
   };
   std::sort(instructions.begin(), instructions.end(), cmp());
 
+  //译码信号缓存  初始化
   for (size_t i = 0; i < OPCODE_CACHE_SIZE; i++)
     opcode_cache[i] = {0, 0, &illegal_instruction, &illegal_instruction};
 }
