@@ -437,7 +437,7 @@ private:
   std::map<reg_t,uint64_t> pc_histogram;
 
   static const size_t OPCODE_CACHE_SIZE = 8191;
-  insn_desc_t opcode_cache[OPCODE_CACHE_SIZE];
+  insn_desc_t opcode_cache[OPCODE_CACHE_SIZE];  //译码信号缓存
 
   void take_pending_interrupt() { take_interrupt(state.mip & state.mie); }
   void take_interrupt(reg_t mask); // take first enabled interrupt in mask

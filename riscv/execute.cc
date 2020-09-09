@@ -169,7 +169,7 @@ static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
   reg_t npc;
 
   try {
-    npc = fetch.func(p, fetch.insn, pc);
+    npc = fetch.func(p, fetch.insn, pc);//计算next PC
     if (npc != PC_SERIALIZE_BEFORE) {
 
 #ifdef RISCV_ENABLE_COMMITLOG
@@ -260,10 +260,10 @@ void processor_t::step(size_t n)
             state.single_step = state.STEP_STEPPED;
           }
 
-          insn_fetch_t fetch = mmu->load_insn(pc);
+          insn_fetch_t fetch = mmu->load_insn(pc);//取指
           if (debug && !state.serialized)
             disasm(fetch.insn);
-          pc = execute_insn(this, pc, fetch);
+          pc = execute_insn(this, pc, fetch); //拿到PC、指令，开始执行指令
           advance_pc();
         }
       }

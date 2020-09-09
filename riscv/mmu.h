@@ -22,8 +22,8 @@ const reg_t PGMASK = ~(PGSIZE-1);
 
 struct insn_fetch_t
 {
-  insn_func_t func;
-  insn_t insn;
+  insn_func_t func;//执行该指令的操作
+  insn_t insn;     //指令
 };
 
 struct icache_entry_t {
@@ -292,7 +292,7 @@ public:
       insn |= (insn_bits_t)from_le(*(const uint16_t*)translate_insn_addr_to_host(addr + 2)) << 16;
     }
 
-    insn_fetch_t fetch = {proc->decode_insn(insn), insn};
+    insn_fetch_t fetch = {proc->decode_insn(insn), insn};//执行该指令的函数，指令
     entry->tag = addr;
     entry->next = &icache[icache_index(addr + length)];
     entry->data = fetch;
@@ -313,7 +313,7 @@ public:
     return refill_icache(addr, entry);
   }
 
-  inline insn_fetch_t load_insn(reg_t addr)
+  inline insn_fetch_t load_insn(reg_t addr)//取指
   {
     icache_entry_t entry;
     return refill_icache(addr, &entry)->data;
