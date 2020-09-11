@@ -169,7 +169,7 @@ static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
   reg_t npc;
 
   try {
-    npc = fetch.func(p, fetch.insn, pc);//计算next PC
+    npc = fetch.func(p, fetch.insn, pc);//计算next PC，并且执行 指令相应的函数
     if (npc != PC_SERIALIZE_BEFORE) {
 
 #ifdef RISCV_ENABLE_COMMITLOG
@@ -193,8 +193,9 @@ static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
       throw;
 #endif
   } catch(...) {
-    throw;
+    throw;  //向上抛异常
   }
+
   p->update_histogram(pc);
 
   return npc;
@@ -220,12 +221,13 @@ void processor_t::step(size_t n)
   }
 
   while (n > 0) {
-    size_t instret = 0;
+    size_t instret = 0; //一次while提交的指令
     reg_t pc = state.pc;
     mmu_t* _mmu = mmu;
 
+    //检查pc异常， 对提交指令计数
     #define advance_pc() \
-     if (unlikely(invalid_pc(pc))) { \
+     if (unlikely(invalid_pc(pc))) { \   //pc & 1
        switch (pc) { \
          case PC_SERIALIZE_BEFORE: state.serialized = true; break; \
          case PC_SERIALIZE_AFTER: ++instret; break; \
@@ -233,11 +235,14 @@ void processor_t::step(size_t n)
          default: abort(); \
        } \
        pc = state.pc; \
-       break; \
+       break; \   //跳出while循环
      } else { \
        state.pc = pc; \
-       instret++; \
+       instret++; \  //指令计数
      }
+
+
+
 
     try
     {
@@ -283,6 +288,7 @@ void processor_t::step(size_t n)
         //
         // According to Andrew Waterman's recollection, this optimization
         // resulted in approximately a 2x performance increase.
+        // a modified Duff's Device 两倍性能
 
         // This figures out where to jump to in the switch statement
         size_t idx = _mmu->icache_index(pc);
@@ -291,14 +297,14 @@ void processor_t::step(size_t n)
         // does not have the current pc cached, it will refill the MMU and
         // return the correct entry. ic_entry->data.func is the C++ function
         // corresponding to the instruction.
-        auto ic_entry = _mmu->access_icache(pc);
+        auto ic_entry = _mmu->access_icache(pc);//从icache中取出指令
 
         // This macro is included in "icache.h" included within the switch
         // statement below. The indirect jump corresponding to the instruction
         // is located within the execute_insn() function call.
         #define ICACHE_ACCESS(i) { \
           insn_fetch_t fetch = ic_entry->data; \
-          pc = execute_insn(this, pc, fetch); \
+          pc = execute_insn(this, pc, fetch); \  //拿到PC、指令，开始执行指令
           ic_entry = ic_entry->next; \
           if (i == mmu_t::ICACHE_ENTRIES-1) break; \
           if (unlikely(ic_entry->tag != pc)) break; \
@@ -316,7 +322,7 @@ void processor_t::step(size_t n)
 
         advance_pc();
       }
-    }
+    }//end of try
     catch(trap_t& t)
     {
       take_trap(t, pc);
