@@ -31,13 +31,15 @@ static void handle_signal(int sig)
 sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              size_t nprocs, bool halted, bool real_time_clint,
              reg_t initrd_start, reg_t initrd_end, const char* bootargs,
-             reg_t start_pc, std::vector<std::pair<reg_t, mem_t*>> mems,
+             reg_t start_pc, 
+             std::vector<std::pair<reg_t, mem_t*>> mems,
              std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices,
              const std::vector<std::string>& args,
              std::vector<int> const hartids,
              const debug_module_config_t &dm_config,
              const char *log_path,
-             bool dtb_enabled, const char *dtb_file)
+             bool dtb_enabled, 
+             const char *dtb_file)
   : htif_t(args),
     mems(mems),
     plugin_devices(plugin_devices),
@@ -77,13 +79,14 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
       exit(1);
   }
 
+  //创建处理器对象
   for (size_t i = 0; i < nprocs; i++) {
     int hart_id = hartids.empty() ? i : hartids[i];
     procs[i] = new processor_t(isa, priv, varch, this, hart_id, halted,
                                log_file.get());
   }
 
-  make_dtb();
+  make_dtb();//制作dts，并编译为dtb
 
   clint.reset(new clint_t(procs, CPU_HZ / INSNS_PER_RTC_TICK, real_time_clint));
   reg_t clint_base;
@@ -143,7 +146,7 @@ void sim_t::step(size_t n)
 {
   for (size_t i = 0, steps = 0; i < n; i += steps)
   {
-    steps = std::min(n - i, INTERLEAVE - current_step);
+    steps = std::min(n - i, INTERLEAVE - current_step);//每一个处理器核的步数
     procs[current_proc]->step(steps);
 
     current_step += steps;
@@ -238,6 +241,8 @@ void sim_t::make_dtb()
   }
 }
 
+
+//制作Bootrom： 包含reset起始代码和设备树
 void sim_t::set_rom()
 {
   const int reset_vec_size = 8;
@@ -253,7 +258,7 @@ void sim_t::set_rom()
       0x0182b283u,                              // ld     t0,24(t0)
     0x28067,                                    // jr     t0
     0,
-    (uint32_t) (start_pc & 0xffffffff),
+    (uint32_t) (start_pc & 0xffffffff),     //偏移24 （前面一共6条指令）
     (uint32_t) (start_pc >> 32)
   };
   for(int i = 0; i < reset_vec_size; i++)
@@ -301,7 +306,7 @@ char* sim_t::addr_to_mem(reg_t addr) {
 void sim_t::reset()
 {
   if (dtb_enabled)
-    set_rom();
+    set_rom();//制作Bootrom： 包含reset起始代码和设备树
 }
 
 void sim_t::idle()
