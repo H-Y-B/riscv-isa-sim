@@ -33,6 +33,8 @@ void tsi_t::reset()
   write_chunk(MSIP_BASE, sizeof(uint32_t), &one);
 }
 
+
+//给DUT传输数据-地址
 void tsi_t::push_addr(addr_t addr)
 {
   for (int i = 0; i < SAI_ADDR_CHUNKS; i++) {
@@ -40,7 +42,7 @@ void tsi_t::push_addr(addr_t addr)
     addr = addr >> 32;
   }
 }
-
+//给DUT传输数据-长度
 void tsi_t::push_len(addr_t len)
 {
   for (int i = 0; i < SAI_LEN_CHUNKS; i++) {
@@ -48,7 +50,7 @@ void tsi_t::push_len(addr_t len)
     len = len >> 32;
   }
 }
-
+//给DUT传输数据-读命令
 void tsi_t::read_chunk(addr_t taddr, size_t nbytes, void* dst)
 {
   uint32_t *result = static_cast<uint32_t*>(dst);
@@ -58,14 +60,14 @@ void tsi_t::read_chunk(addr_t taddr, size_t nbytes, void* dst)
   push_addr(taddr);
   push_len(len - 1);
 
-  for (size_t i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {//等待接收数据
     while (out_data.empty())
       switch_to_target();
     result[i] = out_data.front();
     out_data.pop_front();
   }
 }
-
+//给DUT传输数据-写命令
 void tsi_t::write_chunk(addr_t taddr, size_t nbytes, const void* src)
 {
   const uint32_t *src_data = static_cast<const uint32_t*>(src);
@@ -78,11 +80,15 @@ void tsi_t::write_chunk(addr_t taddr, size_t nbytes, const void* src)
   in_data.insert(in_data.end(), src_data, src_data + len);
 }
 
+
+
 void tsi_t::send_word(uint32_t word)
 {
   out_data.push_back(word);
 }
 
+
+//
 uint32_t tsi_t::recv_word(void)
 {
   uint32_t word = in_data.front();

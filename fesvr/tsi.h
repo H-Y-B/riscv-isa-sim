@@ -15,10 +15,12 @@
 #define SAI_ADDR_CHUNKS 2
 #define SAI_LEN_CHUNKS 2
 
+
+//tsi_t类
 class tsi_t : public htif_t
 {
  public:
-  tsi_t(int argc, char** argv);
+  tsi_t(int argc, char** argv);//构造方法
   virtual ~tsi_t();
 
   bool data_available();
@@ -26,7 +28,7 @@ class tsi_t : public htif_t
   uint32_t recv_word();
   void switch_to_host();
 
-  uint32_t in_bits() { return in_data.front(); }
+  uint32_t in_bits() { return in_data.front(); }//给DUT送数据
   bool in_valid() { return !in_data.empty(); }
   bool out_ready() { return true; }
   void tick(bool out_valid, uint32_t out_bits, bool in_ready);
@@ -46,7 +48,7 @@ class tsi_t : public htif_t
   context_t host;
   context_t* target;
   std::deque<uint32_t> in_data;
-  std::deque<uint32_t> out_data;
+  std::deque<uint32_t> out_data;//接受来之DUT的数据
 
   void push_addr(addr_t addr);
   void push_len(addr_t len);
