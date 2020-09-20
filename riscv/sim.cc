@@ -82,7 +82,12 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
   //创建处理器对象
   for (size_t i = 0; i < nprocs; i++) {
     int hart_id = hartids.empty() ? i : hartids[i];
-    procs[i] = new processor_t(isa, priv, varch, this, hart_id, halted,
+    procs[i] = new processor_t(isa, 
+                               priv, 
+                               varch, 
+                               this, 
+                               hart_id, 
+                               halted,
                                log_file.get());
   }
 

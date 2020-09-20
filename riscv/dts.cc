@@ -45,11 +45,13 @@ std::string make_dts(size_t insns_per_rtc_tick, size_t cpu_hz,
   }
     s << "\";\n";
     s << "  };\n"
+
          "  cpus {\n"
          "    #address-cells = <1>;\n"
          "    #size-cells = <0>;\n"
          "    timebase-frequency = <" << (cpu_hz/insns_per_rtc_tick) << ">;\n";
-  for (size_t i = 0; i < procs.size(); i++) {
+
+  for (size_t i = 0; i < procs.size(); i++) {   //多核
     s << "    CPU" << i << ": cpu@" << i << " {\n"
          "      device_type = \"cpu\";\n"
          "      reg = <" << i << ">;\n"
@@ -68,6 +70,9 @@ std::string make_dts(size_t insns_per_rtc_tick, size_t cpu_hz,
          "    };\n";
   }
   s <<   "  };\n";
+
+
+
   for (auto& m : mems) {
     s << std::hex <<
          "  memory@" << m.first << " {\n"
