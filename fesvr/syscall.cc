@@ -131,7 +131,7 @@ static reg_t sysret_errno(sreg_t ret)
 reg_t syscall_t::sys_read(reg_t fd, reg_t pbuf, reg_t len, reg_t a3, reg_t a4, reg_t a5, reg_t a6)
 {
   std::vector<char> buf(len);
-  ssize_t ret = read(fds.lookup(fd), &buf[0], len);
+  ssize_t ret = read(fds.lookup(fd), &buf[0], len);//host系统调用
   reg_t ret_errno = sysret_errno(ret);
   if (ret > 0)
     memif->write(pbuf, ret, &buf[0]);
@@ -141,7 +141,7 @@ reg_t syscall_t::sys_read(reg_t fd, reg_t pbuf, reg_t len, reg_t a3, reg_t a4, r
 reg_t syscall_t::sys_pread(reg_t fd, reg_t pbuf, reg_t len, reg_t off, reg_t a4, reg_t a5, reg_t a6)
 {
   std::vector<char> buf(len);
-  ssize_t ret = pread(fds.lookup(fd), &buf[0], len, off);
+  ssize_t ret = pread(fds.lookup(fd), &buf[0], len, off);//host系统调用
   reg_t ret_errno = sysret_errno(ret);
   if (ret > 0)
     memif->write(pbuf, ret, &buf[0]);
@@ -152,7 +152,7 @@ reg_t syscall_t::sys_write(reg_t fd, reg_t pbuf, reg_t len, reg_t a3, reg_t a4, 
 {
   std::vector<char> buf(len);
   memif->read(pbuf, len, &buf[0]);
-  reg_t ret = sysret_errno(write(fds.lookup(fd), &buf[0], len));
+  reg_t ret = sysret_errno(write(fds.lookup(fd), &buf[0], len));//host系统调用
   return ret;
 }
 
@@ -166,7 +166,7 @@ reg_t syscall_t::sys_pwrite(reg_t fd, reg_t pbuf, reg_t len, reg_t off, reg_t a4
 
 reg_t syscall_t::sys_close(reg_t fd, reg_t a1, reg_t a2, reg_t a3, reg_t a4, reg_t a5, reg_t a6)
 {
-  if (close(fds.lookup(fd)) < 0)
+  if (close(fds.lookup(fd)) < 0)//host系统调用
     return sysret_errno(-1);
   fds.dealloc(fd);
   return 0;
@@ -174,7 +174,7 @@ reg_t syscall_t::sys_close(reg_t fd, reg_t a1, reg_t a2, reg_t a3, reg_t a4, reg
 
 reg_t syscall_t::sys_lseek(reg_t fd, reg_t ptr, reg_t dir, reg_t a3, reg_t a4, reg_t a5, reg_t a6)
 {
-  return sysret_errno(lseek(fds.lookup(fd), ptr, dir));
+  return sysret_errno(lseek(fds.lookup(fd), ptr, dir));//host系统调用
 }
 
 reg_t syscall_t::sys_fstat(reg_t fd, reg_t pbuf, reg_t a2, reg_t a3, reg_t a4, reg_t a5, reg_t a6)
@@ -343,10 +343,11 @@ void syscall_t::dispatch(reg_t mm)
   reg_t magicmem[8];
   memif->read(mm, sizeof(magicmem), magicmem);
 
-  reg_t n = from_le(magicmem[0]);
+  reg_t n = from_le(magicmem[0]);//target传给host的·系统调用ID
   if (n >= table.size() || !table[n])
     throw std::runtime_error("bad syscall #" + std::to_string(n));
 
+  //host执行系统调用
   magicmem[0] = to_le((this->*table[n])(from_le(magicmem[1]), from_le(magicmem[2]), from_le(magicmem[3]), from_le(magicmem[4]), from_le(magicmem[5]), from_le(magicmem[6]), from_le(magicmem[7])));
 
   memif->write(mm, sizeof(magicmem), magicmem);

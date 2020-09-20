@@ -68,7 +68,7 @@ class htif_t : public chunked_memif_t
   bool stopped;
 
   device_list_t device_list;
-  syscall_t syscall_proxy;
+  syscall_t syscall_proxy;  //系统调用代理
   bcd_t bcd;
   std::vector<device_t*> dynamic_devices;
   std::vector<std::string> payloads;
