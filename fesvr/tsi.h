@@ -16,6 +16,7 @@
 #define SAI_LEN_CHUNKS 2
 
 
+//Tethered Serial Interface (TSI)
 //tsi_t类
 class tsi_t : public htif_t
 {
