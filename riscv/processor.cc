@@ -572,6 +572,7 @@ void processor_t::take_interrupt(reg_t pending_interrupts)
     else
       abort();
 
+    //抛出trap异常
     throw trap_t(((reg_t)1 << (max_xlen-1)) | ctz(enabled_interrupts));
   }
 }

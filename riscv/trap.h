@@ -8,6 +8,7 @@
 
 struct state_t;
 
+//trap类
 class trap_t
 {
  public:
@@ -45,7 +46,8 @@ class mem_trap_t : public trap_t
 {
  public:
   mem_trap_t(reg_t which, bool gva, reg_t tval, reg_t tval2, reg_t tinst)
-    : trap_t(which), gva(gva), tval(tval), tval2(tval2), tinst(tinst) {}
+    : trap_t(which),     gva(gva), tval(tval), tval2(tval2), tinst(tinst) {}
+
   bool has_gva() override { return gva; }
   bool has_tval() override { return true; }
   reg_t get_tval() override { return tval; }
