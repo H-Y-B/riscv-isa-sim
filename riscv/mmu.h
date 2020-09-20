@@ -278,7 +278,7 @@ public:
     insn_bits_t insn = from_le(*(uint16_t*)(tlb_entry.host_offset + addr));
     int length = insn_length(insn);
 
-    if (likely(length == 4)) {
+    if (likely(length == 4)) {//4 Byte
       insn |= (insn_bits_t)from_le(*(const int16_t*)translate_insn_addr_to_host(addr + 2)) << 16;
     } else if (length == 2) {
       insn = (int16_t)insn;

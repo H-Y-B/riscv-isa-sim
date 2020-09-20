@@ -341,7 +341,7 @@ int main(int argc, char** argv)
                 [&](const char* s){log_path = s;});
 
   auto argv1 = parser.parse(argv);
-  std::vector<std::string> htif_args(argv1, (const char*const*)argv + argc);
+  std::vector<std::string> htif_args(argv1, (const char*const*)argv + argc);//加载目标ELF
   if (mems.empty())
     mems = make_mems("2048");
 
@@ -380,16 +380,16 @@ int main(int argc, char** argv)
   sim_t s(isa, 
           priv, 
           varch, 
-          nprocs, 
+          nprocs,  //处理器个数
           halted, 
           real_time_clint,
           initrd_start, 
           initrd_end, 
-          bootargs, 
+          bootargs,  //bootargs 构造设备树
           start_pc, 
           mems, 
           plugin_devices, 
-          htif_args,
+          htif_args,  
           std::move(hartids), 
           dm_config, 
           log_path, 

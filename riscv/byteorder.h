@@ -15,6 +15,8 @@ static inline int16_t swap(int16_t n) { return __builtin_bswap16(n); }
 static inline int32_t swap(int32_t n) { return __builtin_bswap32(n); }
 static inline int64_t swap(int64_t n) { return __builtin_bswap64(n); }
 
+
+//大小端的解决
 #ifdef WORDS_BIGENDIAN
 template<typename T> static inline T from_be(T n) { return n; }
 template<typename T> static inline T to_be(T n) { return n; }
