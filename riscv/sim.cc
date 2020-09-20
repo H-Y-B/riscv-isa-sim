@@ -143,7 +143,8 @@ void sim_t::main()
 int sim_t::run()
 {
   host = context_t::current();
-  target.init(sim_thread_main, this);
+  target.init(sim_thread_main, this);//开辟新线程
+
   return htif_t::run();
 }
 

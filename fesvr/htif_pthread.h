@@ -29,8 +29,8 @@ class htif_pthread_t : public htif_t
  private:
   context_t host;
   context_t* target;
-  std::deque<char> th_data;
-  std::deque<char> ht_data;
+  std::deque<char> th_data;//target->host
+  std::deque<char> ht_data;//host->target
 
   static void thread_main(void* htif);
 };

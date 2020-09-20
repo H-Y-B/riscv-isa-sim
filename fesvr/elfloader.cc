@@ -90,5 +90,5 @@ std::map<std::string, uint64_t> load_elf(const char* fn, memif_t* memif, reg_t* 
 
   munmap(buf, size);
 
-  return symbols;
+  return symbols; //返回map数组
 }

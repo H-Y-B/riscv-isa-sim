@@ -40,6 +40,7 @@ static void handle_signal(int sig)
   signal(sig, &handle_signal);
 }
 
+//构造方法一
 htif_t::htif_t()
   : mem(this), entry(DRAM_BASE), sig_addr(0), sig_len(0),
     tohost_addr(0), fromhost_addr(0), exitcode(0), stopped(false),
@@ -49,13 +50,13 @@ htif_t::htif_t()
   signal(SIGTERM, &handle_signal);
   signal(SIGABRT, &handle_signal); // we still want to call static destructors
 }
-
+//构造方法二
 htif_t::htif_t(int argc, char** argv) : htif_t()
 {
   parse_arguments(argc, argv);
   register_devices();
 }
-
+//构造方法三
 htif_t::htif_t(const std::vector<std::string>& args) : htif_t()
 {
   int argc = args.size() + 1;
@@ -80,7 +81,7 @@ void htif_t::start()
   if (!targs.empty() && targs[0] != "none")
       load_program();
 
-  reset();
+  reset();//程序加载完毕，发送软件中断
 }
 
 std::map<std::string, uint64_t> htif_t::load_payload(const std::string& payload, reg_t* entry)
@@ -119,12 +120,13 @@ std::map<std::string, uint64_t> htif_t::load_payload(const std::string& payload,
   return load_elf(path.c_str(), &preload_aware_memif, entry);//执行elf加载
 }
 
-void htif_t::load_program()
+void htif_t::load_program()//加载程序
 {
   std::map<std::string, uint64_t> symbols = load_payload(targs[0], &entry);
 
+  //host和target通过  elf 中的 tohost 和 fromhost 段来进行交互
   if (symbols.count("tohost") && symbols.count("fromhost")) {
-    tohost_addr = symbols["tohost"];
+    tohost_addr = symbols["tohost"];     
     fromhost_addr = symbols["fromhost"];
   } else {
     fprintf(stderr, "warning: tohost and fromhost symbols not in ELF; can't communicate with target\n");
@@ -195,10 +197,10 @@ int htif_t::run()
 
   while (!signal_exit && exitcode == 0)
   {
-    if (auto tohost = from_le(mem.read_uint64(tohost_addr))) {
-      mem.write_uint64(tohost_addr, 0);
+    if (auto tohost = from_le(mem.read_uint64(tohost_addr))) {//一直读target给host的地址中的数据
+      mem.write_uint64(tohost_addr, 0);//马上清零
       command_t cmd(mem, tohost, fromhost_callback);
-      device_list.handle_command(cmd);
+      device_list.handle_command(cmd);//设备 处理 cmd （包含系统调用）
     } else {
       idle();
     }
@@ -206,7 +208,7 @@ int htif_t::run()
     device_list.tick();
 
     if (!fromhost_queue.empty() && mem.read_uint64(fromhost_addr) == 0) {
-      mem.write_uint64(fromhost_addr, to_le(fromhost_queue.front()));
+      mem.write_uint64(fromhost_addr, to_le(fromhost_queue.front()));//host给target发送数据
       fromhost_queue.pop();
     }
   }

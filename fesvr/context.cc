@@ -29,7 +29,7 @@ void context_t::wrapper(unsigned int hi, unsigned int lo)
   ctx->func(ctx->arg);
 }
 #else
-void* context_t::wrapper(void* a)
+void* context_t::wrapper(void* a)//传入pthread的函数
 {
   context_t* ctx = static_cast<context_t*>(a);
   cur = ctx;
@@ -64,7 +64,7 @@ void context_t::init(void (*f)(void*), void* a)
 
   pthread_mutex_lock(&creator->mutex);
   creator->flag = 0;
-  if (pthread_create(&thread, NULL, &context_t::wrapper, this) != 0)
+  if (pthread_create(&thread, NULL, &context_t::wrapper, this) != 0)//创建线程
     abort();
   pthread_detach(thread);
   while (!creator->flag)

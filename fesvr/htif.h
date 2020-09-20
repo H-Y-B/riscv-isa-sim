@@ -57,8 +57,8 @@ class htif_t : public chunked_memif_t
   memif_t mem;
   reg_t entry;
   bool writezeros;
-  std::vector<std::string> hargs;
-  std::vector<std::string> targs;
+  std::vector<std::string> hargs; //host
+  std::vector<std::string> targs; //target
   std::string sig_file;
   addr_t sig_addr; // torture
   addr_t sig_len; // torture
