@@ -20,6 +20,7 @@ device_t::device_t()
   register_command(command_t::MAX_COMMANDS-1, std::bind(&device_t::handle_identify, this, _1), "identity");
 }
 
+//cmd数组下标、handler函数、name字符串
 void device_t::register_command(size_t cmd, command_func_t handler, const char* name)
 {
   assert(cmd < command_t::MAX_COMMANDS);
@@ -56,6 +57,13 @@ void device_t::handle_identify(command_t cmd)
   cmd.respond(1);
 }
 
+
+
+
+
+
+
+
 bcd_t::bcd_t()
 {
   register_command(0, std::bind(&bcd_t::handle_read, this, _1), "read");
@@ -81,6 +89,12 @@ void bcd_t::tick()
     pending_reads.pop();
   }
 }
+
+
+
+
+
+
 
 disk_t::disk_t(const char* fn)
 {
@@ -131,6 +145,12 @@ void disk_t::handle_write(command_t cmd)
   cmd.respond(req.tag);
 }
 
+
+
+
+
+
+//设备列表
 device_list_t::device_list_t()
   : devices(command_t::MAX_COMMANDS, &null_device), num_devices(0)
 {

@@ -17,9 +17,9 @@ class command_t
     : _memif(memif), tohost(tohost), cb(cb) {}
 
   memif_t& memif() { return _memif; }
-  uint8_t device() { return tohost >> 56; }
-  uint8_t cmd() { return tohost >> 48; }
-  uint64_t payload() { return tohost << 16 >> 16; }
+  uint8_t device() { return tohost >> 56; }            //tohost[63:56]
+  uint8_t cmd() { return tohost >> 48; }               //tohost[55:48]
+  uint64_t payload() { return tohost << 16 >> 16; }    //tohost[48: 0]
   void respond(uint64_t resp) { cb((tohost >> 48 << 48) | (resp << 16 >> 16)); }
 
   static const size_t MAX_COMMANDS = 256;
@@ -30,6 +30,13 @@ class command_t
   uint64_t tohost;
   callback_t cb;
 };
+
+
+
+
+
+
+
 
 class device_t
 {
@@ -112,7 +119,7 @@ class device_list_t
  private:
   std::vector<device_t*> devices;
   null_device_t null_device;
-  size_t num_devices;
+  size_t num_devices;//设备个数
 };
 
 #endif
