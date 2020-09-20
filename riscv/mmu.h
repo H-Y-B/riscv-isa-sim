@@ -308,8 +308,10 @@ public:
   inline icache_entry_t* access_icache(reg_t addr)
   {
     icache_entry_t* entry = &icache[icache_index(addr)];
-    if (likely(entry->tag == addr))
+    if (likely(entry->tag == addr))//命中
       return entry;
+
+    //没命中
     return refill_icache(addr, entry);
   }
 
