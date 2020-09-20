@@ -130,7 +130,7 @@ void sim_t::main()
 
   while (!done())
   {
-    if (debug || ctrlc_pressed)
+    if (debug || ctrlc_pressed)//打开debug模式，可以单步执行
       interactive();
     else
       step(INTERLEAVE);
