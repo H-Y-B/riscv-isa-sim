@@ -685,6 +685,11 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
     return;
   }
 
+  /*问题：什么是 HS-mode 和 VS-mode？ 为什么要将S-node分成这两种模式？
+   * Hypervisor-Extended Supervisor
+   * Virtualized Supervisor
+   */
+
   // By default, trap to M-mode, unless delegated to HS-mode or VS-mode
   reg_t vsdeleg, hsdeleg;
   reg_t bit = t.cause();
@@ -702,8 +707,8 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
   //三种模式下处理 trap
   if (state.prv <= PRV_S && bit < max_xlen && ((vsdeleg >> bit) & 1)) {
     // Handle the trap in VS-mode
-    reg_t vector = (state.vstvec & 1) && interrupt ? 4*bit : 0;
-    state.pc = (state.vstvec & ~(reg_t)1) + vector;
+    reg_t vector = (state.vstvec & 1) && interrupt ? 4*bit : 0; //问题：这个vector是作什么用的？
+    state.pc = (state.vstvec & ~(reg_t)1) + vector;             //问题：&~(reg_t)1 这个作什么？
     state.vscause = (interrupt) ? (t.cause() - 1) : t.cause();
     state.vsepc = epc;
     state.vstval = t.get_tval();
