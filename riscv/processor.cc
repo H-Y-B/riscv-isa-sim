@@ -526,10 +526,19 @@ void processor_t::take_interrupt(reg_t pending_interrupts)
     return;
   }
 
+  /* 特权模式下的优先级
+   *  M-mode  >   HS-mode    >   VS-mode
+   * machine     hypervisor     supervisor
+   */
+
   // M-ints have higher priority over HS-ints and VS-ints
-  mie = get_field(state.mstatus, MSTATUS_MIE);
+  mie = get_field(state.mstatus, MSTATUS_MIE);    ///M-mode下的中断使能
   m_enabled = state.prv < PRV_M || (state.prv == PRV_M && mie);
-  enabled_interrupts = pending_interrupts & ~state.mideleg & -m_enabled;
+  enabled_interrupts = pending_interrupts & ~state.mideleg    & -m_enabled;
+  //可以处理的中断                             M-mode可以处理的中断   
+  //                                                            -0=000000000
+  //                                                            -1=011111111
+
   if (enabled_interrupts == 0) {
     // HS-ints have higher priority over VS-ints
     deleg = state.mideleg & ~MIP_VS_MASK;
@@ -537,6 +546,7 @@ void processor_t::take_interrupt(reg_t pending_interrupts)
     hsie = get_field(status, MSTATUS_SIE);
     hs_enabled = state.prv < PRV_S || (state.prv == PRV_S && hsie);
     enabled_interrupts = pending_interrupts & deleg & -hs_enabled;
+    
     if (state.v && enabled_interrupts == 0) {
       // VS-ints have least priority and can only be taken with virt enabled
       deleg = state.mideleg & state.hideleg;
@@ -547,6 +557,7 @@ void processor_t::take_interrupt(reg_t pending_interrupts)
   }
 
   if (!state.debug_mode && enabled_interrupts) {
+    // 这里主要是对优先级的处理
     // nonstandard interrupts have highest priority
     if (enabled_interrupts >> IRQ_M_EXT)
       enabled_interrupts = enabled_interrupts >> IRQ_M_EXT << IRQ_M_EXT;
@@ -574,6 +585,7 @@ void processor_t::take_interrupt(reg_t pending_interrupts)
 
     //抛出trap异常
     throw trap_t(((reg_t)1 << (max_xlen-1)) | ctz(enabled_interrupts));
+    //cause=[interrupt][interrupt code]
   }
 }
 
@@ -692,20 +704,21 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
 
   // By default, trap to M-mode, unless delegated to HS-mode or VS-mode
   reg_t vsdeleg, hsdeleg;
-  reg_t bit = t.cause();
+  reg_t bit = t.cause();  //trap ID
   bool curr_virt = state.v;
+
   bool interrupt = (bit & ((reg_t)1 << (max_xlen-1))) != 0;
-  if (interrupt) {//中断处理
+  if (interrupt) {//中断代理
     vsdeleg = (curr_virt && state.prv <= PRV_S) ? (state.mideleg & state.hideleg) : 0;
     hsdeleg = (state.prv <= PRV_S) ? state.mideleg : 0;
     bit &= ~((reg_t)1 << (max_xlen-1));
-  } else {
+  } else {//异常代理
     vsdeleg = (curr_virt && state.prv <= PRV_S) ? (state.medeleg & state.hedeleg) : 0;
     hsdeleg = (state.prv <= PRV_S) ? state.medeleg : 0;
   }
 
   //三种模式下处理 trap
-  if (state.prv <= PRV_S && bit < max_xlen && ((vsdeleg >> bit) & 1)) {
+  if (state.prv <= PRV_S && bit < max_xlen && ((vsdeleg >> bit) & 1)) { //当前模式是 S或则U
     // Handle the trap in VS-mode
     reg_t vector = (state.vstvec & 1) && interrupt ? 4*bit : 0; //问题：这个vector是作什么用的？
     state.pc = (state.vstvec & ~(reg_t)1) + vector;             //问题：&~(reg_t)1 这个作什么？
@@ -713,17 +726,22 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
     state.vsepc = epc;
     state.vstval = t.get_tval();
 
+    //set mstatus-spie to mstatus-sie 
+    //set mstatus-spp  to prv，
+    //set mstatus-sie  to 0
     reg_t s = state.mstatus;
     s = set_field(s, MSTATUS_SPIE, get_field(s, MSTATUS_SIE));
     s = set_field(s, MSTATUS_SPP, state.prv);
     s = set_field(s, MSTATUS_SIE, 0);
     set_csr(CSR_MSTATUS, s);
+    
+    
     set_privilege(PRV_S);
   } else if (state.prv <= PRV_S && bit < max_xlen && ((hsdeleg >> bit) & 1)) {
     // Handle the trap in HS-mode
     set_virt(false);
     reg_t vector = (state.stvec & 1) && interrupt ? 4*bit : 0;
-    state.pc = (state.stvec & ~(reg_t)1) + vector;
+    state.pc = (state.stvec & ~(reg_t)1) + vector;  //按位取反
     state.scause = t.cause();
     state.sepc = epc;
     state.stval = t.get_tval();
@@ -735,11 +753,13 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
     s = set_field(s, MSTATUS_SPP, state.prv);
     s = set_field(s, MSTATUS_SIE, 0);
     set_csr(CSR_MSTATUS, s);
+
     s = state.hstatus;
     s = set_field(s, HSTATUS_SPVP, state.prv);
     s = set_field(s, HSTATUS_SPV, curr_virt);
     s = set_field(s, HSTATUS_GVA, t.has_gva());
     set_csr(CSR_HSTATUS, s);
+    
     set_privilege(PRV_S);
   } else {
     // Handle the trap in M-mode
@@ -759,6 +779,7 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
     s = set_field(s, MSTATUS_MPV, curr_virt);
     s = set_field(s, MSTATUS_GVA, t.has_gva());
     set_csr(CSR_MSTATUS, s);
+
     set_privilege(PRV_M);
   }
 }
