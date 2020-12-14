@@ -4,6 +4,7 @@
 
 #define NHARTS_MAX 16
 
+//host线程
 void tsi_t::host_thread(void *arg)
 {
   tsi_t *tsi = static_cast<tsi_t*>(arg);
@@ -13,6 +14,7 @@ void tsi_t::host_thread(void *arg)
     tsi->target->switch_to();
 }
 
+//构造方法
 tsi_t::tsi_t(int argc, char** argv) : htif_t(argc, argv)
 {
   target = context_t::current();
@@ -31,7 +33,7 @@ void tsi_t::reset()
   uint32_t one = 1;
 
   write_chunk(MSIP_BASE, sizeof(uint32_t), &one);
-  //发送 软件中断 
+  //向CLINT中的ipi寄存器写1，引起 软件中断 
 }
 
 

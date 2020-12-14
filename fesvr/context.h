@@ -35,17 +35,17 @@ class context_t
   context_t* creator;
   void (*func)(void*);
   void* arg;
-#ifdef USE_UCONTEXT
-  std::unique_ptr<ucontext_t> context;
+#ifdef USE_UCONTEXT//使用上下文切换
+  std::unique_ptr<ucontext_t> context;//上下文
 #ifndef GLIBC_64BIT_PTR_BUG
   static void wrapper(context_t*);
 #else
   static void wrapper(unsigned int, unsigned int);
 #endif
-#else
+#else             //使用锁
   pthread_t thread;
   pthread_mutex_t mutex;
-  pthread_cond_t cond;
+  pthread_cond_t cond;  //条件变量
   volatile int flag;
   static void* wrapper(void*);
 #endif
